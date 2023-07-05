@@ -1,27 +1,41 @@
+import { getToken } from '@/utils/storage'
+import { Message } from 'element-ui'
 import Vue from 'vue'
 import VueRouter from 'vue-router'
-import HomeView from '../views/HomeView.vue'
 
 Vue.use(VueRouter)
 
-const routes = [
-  {
-    path: '/',
-    name: 'home',
-    component: HomeView
-  },
-  {
-    path: '/about',
-    name: 'about',
-    // route level code-splitting
-    // this generates a separate chunk (about.[hash].js) for this route
-    // which is lazy-loaded when the route is visited.
-    component: () => import(/* webpackChunkName: "about" */ '../views/AboutView.vue')
-  }
-]
+// const routes = [
 
+// ]
+
+// 路由懒加载，二级路由，重定向
 const router = new VueRouter({
-  routes
+  routes: [
+    {
+      path: '/',
+      component: () => import('@/views/layout'),
+      redirect: '/dashboard',
+      children: [
+        // 二级路由path的两种写法
+        // 1.绝对路径  
+        // 2.相对路径  path:'dashboard'  自动拼接上父路由的地址 => /dashboard
+        { path: '/dashboard', component: () => import('@/views/dashboard') },
+        { path: '/article', component: () => import('@/views/article') },
+      ]
+    },
+    { path: '/login', component: () => import('@/views/login') },
+  ]
+})
+
+const whiteList = ['/login']
+router.beforeEach((to, from, next) => {
+  // 排除法
+  // 允许通行：1.token 2.白名单
+  const token = getToken()
+  if (token || whiteList.includes(to.path)) return next()
+  next('/login')
+  Message.error("请您先登录哦~")
 })
 
 export default router
